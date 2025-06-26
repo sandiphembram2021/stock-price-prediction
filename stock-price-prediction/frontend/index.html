@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Price Prediction</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-chart-line"></i> Stock Price Prediction</h1>
+                <p>AI-powered LSTM model for stock price forecasting</p>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Control Panel -->
+            <section class="control-panel">
+                <div class="input-group">
+                    <label for="stockSymbol">Stock Symbol:</label>
+                    <input type="text" id="stockSymbol" placeholder="e.g., AAPL, GOOGL, TSLA" value="AAPL">
+                </div>
+                
+                <div class="input-group">
+                    <label for="predictionDays">Prediction Days:</label>
+                    <select id="predictionDays">
+                        <option value="1">1 Day</option>
+                        <option value="7">1 Week</option>
+                        <option value="30" selected>1 Month</option>
+                        <option value="90">3 Months</option>
+                        <option value="180">6 Months</option>
+                    </select>
+                </div>
+
+                <div class="button-group">
+                    <button id="predictBtn" class="btn btn-primary">
+                        <i class="fas fa-magic"></i> Predict
+                    </button>
+                    <button id="trainBtn" class="btn btn-secondary">
+                        <i class="fas fa-brain"></i> Train Model
+                    </button>
+                    <button id="refreshBtn" class="btn btn-info">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+            </section>
+
+            <!-- Status Panel -->
+            <section class="status-panel">
+                <div class="status-item">
+                    <span class="status-label">API Status:</span>
+                    <span id="apiStatus" class="status-value">Checking...</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Model Status:</span>
+                    <span id="modelStatus" class="status-value">Unknown</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Last Updated:</span>
+                    <span id="lastUpdated" class="status-value">Never</span>
+                </div>
+            </section>
+
+            <!-- Results Panel -->
+            <section class="results-panel">
+                <div class="prediction-summary">
+                    <h3>Prediction Summary</h3>
+                    <div class="summary-grid">
+                        <div class="summary-item">
+                            <span class="summary-label">Current Price:</span>
+                            <span id="currentPrice" class="summary-value">--</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Predicted Price:</span>
+                            <span id="predictedPrice" class="summary-value">--</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Change:</span>
+                            <span id="priceChange" class="summary-value">--</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Change %:</span>
+                            <span id="priceChangePercent" class="summary-value">--</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Chart Section -->
+            <section class="chart-section">
+                <div class="chart-container">
+                    <canvas id="priceChart"></canvas>
+                </div>
+            </section>
+
+            <!-- Training Panel -->
+            <section class="training-panel" id="trainingPanel" style="display: none;">
+                <h3>Model Training</h3>
+                <div class="training-form">
+                    <div class="form-row">
+                        <div class="input-group">
+                            <label for="trainStartDate">Start Date:</label>
+                            <input type="date" id="trainStartDate">
+                        </div>
+                        <div class="input-group">
+                            <label for="trainEndDate">End Date:</label>
+                            <input type="date" id="trainEndDate">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="input-group">
+                            <label for="epochs">Epochs:</label>
+                            <input type="number" id="epochs" value="50" min="1" max="200">
+                        </div>
+                        <div class="input-group">
+                            <label for="batchSize">Batch Size:</label>
+                            <input type="number" id="batchSize" value="16" min="1" max="128">
+                        </div>
+                    </div>
+                    <div class="button-group">
+                        <button id="startTrainingBtn" class="btn btn-success">
+                            <i class="fas fa-play"></i> Start Training
+                        </button>
+                        <button id="cancelTrainingBtn" class="btn btn-danger">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                    </div>
+                </div>
+                <div class="training-progress" id="trainingProgress" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <p id="trainingStatus">Training in progress...</p>
+                </div>
+            </section>
+
+            <!-- Predictions History -->
+            <section class="history-section">
+                <h3>Recent Predictions</h3>
+                <div class="predictions-table">
+                    <table id="predictionsTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Target Date</th>
+                                <th>Predicted Price</th>
+                                <th>Actual Price</th>
+                                <th>Accuracy</th>
+                            </tr>
+                        </thead>
+                        <tbody id="predictionsTableBody">
+                            <tr>
+                                <td colspan="5" class="no-data">No predictions available</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+            <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Processing...</p>
+            </div>
+        </div>
+
+        <!-- Toast Notifications -->
+        <div class="toast-container" id="toastContainer"></div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

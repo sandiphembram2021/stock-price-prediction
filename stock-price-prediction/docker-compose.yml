@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  stock-prediction-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:///app/backend/database/stock_prediction.db
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - DEBUG=False
+    volumes:
+      - ./backend/database:/app/backend/database
+      - ./backend/models/saved:/app/backend/models/saved
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Add a reverse proxy for production
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./frontend:/usr/share/nginx/html:ro
+    depends_on:
+      - stock-prediction-api
+    restart: unless-stopped
+    profiles:
+      - production
+
+volumes:
+  database_data:
+  model_data:
+  logs_data:
